@@ -96,18 +96,21 @@ int FilePackManage::sendFile(int sockfd, const char* filepath) {
         close(filefd);
         return -1;
     }
-    // (2) send file
-    ssize_t recvlen;
-    while ((recvlen = read(filefd, this->pack->data, this->getFILE_BLOCK_SIZE())) > 0) {
-        if (writen(sockfd, this->pack->data, recvlen) < 0) {
-            fprintf(stderr, "Err: send file packet failed.\n");
-            close(filefd);
-            return -1;
+    // empty judge
+    if (pack->filesize != 0) {
+        // (2) send file
+        ssize_t recvlen;
+        while ((recvlen = read(filefd, this->pack->data, this->getFILE_BLOCK_SIZE())) > 0) {
+            if (writen(sockfd, this->pack->data, recvlen) < 0) {
+                fprintf(stderr, "Err: send file packet failed.\n");
+                close(filefd);
+                return -1;
+            }
+            // bzero
+            bzero((void*)(this->pack->data), this->getFILE_BLOCK_SIZE());
         }
-        // bzero
-        bzero((void*)(this->pack->data), this->getFILE_BLOCK_SIZE());
     }
-    // clean
+    // 5 clean
     close(filefd);
     return 0;
 }
@@ -147,6 +150,9 @@ int FilePackManage::recvFile(int sockfd) {
             fprintf(stderr, "Err: open file to write failed.\n");
             return -1;
         }
+        if (this->pack->filesize == 0) {
+            goto closefilefd;
+        }
         for (int i = 0; i < (int)(this->pack->filesize / this->getFILE_BLOCK_SIZE()); i++) {
             recvlen = readn(sockfd, this->pack->data, this->getFILE_BLOCK_SIZE());
             if (recvlen < 0) {
@@ -182,8 +188,7 @@ int FilePackManage::recvFile(int sockfd) {
             }
         }
     }
-    // clean
-    close(filefd);
+    closefilefd:close(filefd);
     return 0;
 }
 
@@ -193,13 +198,9 @@ int FilePackManage::downFile(const int sockfd, const char* filename) {
     this->pack->type = down;
     strncpy(this->pack->filename, filename, strlen(filename));
     // 2 send head
-    if (writen(sockfd, (char*)(this->pack), this->getPACKET_HEAD_SIZE()) < 0) {
+    ssize_t sendlen = writen(sockfd, (char*)(this->pack), this->getPACKET_HEAD_SIZE());
+    if (sendlen < 0) {
         fprintf(stderr, "Err: send down error.\n");
-        return -1;
-    }
-    // 3 recv file
-    if (this->recvFile(sockfd)) {
-        fprintf(stderr, "Err: recv downfile failed.\n");
         return -1;
     }
     return 0;
@@ -217,8 +218,11 @@ int FilePackManage::serverProcessDown(const int sockfd) {
             // printf("client closed.\n");
             return 0;
         } else if (recvlen == -2) {
+            // printf("no data.\n");
             return 0;
         } else {
+            printf("debug\n");
+            bzero((void*)filename_tmp, 256);
             strncpy(filename_tmp, this->pack->filename, strlen(this->pack->filename));
             if (this->sendFile(sockfd, filename_tmp)) {
                 fprintf(stderr, "Err: send downfile error.\n");
@@ -249,9 +253,10 @@ int FilePackManage::recvFileList(const int sockfd) {
         } else {
             char* tmp = filelist;
             while(strlen(tmp) != 0) {
-                printf("%s    \n", tmp);
+                printf("%s    ", tmp);
                 tmp += strlen(tmp) + 1;
             }
+            printf("\n");
         }
         free((void*)filelist);
     }

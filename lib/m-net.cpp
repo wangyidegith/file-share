@@ -154,7 +154,7 @@ ssize_t writen(const int fd, const char* buf, const size_t n) {   // for no epol
         offset += nwrite;
         nleft -= nwrite;
     }
-    return n;
+    return offset;
 }
 
 ssize_t readn(const int fd, char* buf, const size_t n) {   // for nonblock
@@ -165,7 +165,7 @@ ssize_t readn(const int fd, char* buf, const size_t n) {   // for nonblock
             if (errno == EINTR) {
                 continue;
             } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                return NO_DATA;
+                return -2;
             }
             perror("read");
             return nread;
@@ -204,7 +204,7 @@ ssize_t mq_receive_n(const mqd_t fd, char* buf, const size_t n) {   // for nonbl
                 continue;
             }
             if (nread == EAGAIN) {
-                return NO_DATA;
+                return -2;
             }
             perror("mq_receive");
             return nread;
@@ -281,7 +281,7 @@ ssize_t recvn(const int fd, char* buf, const size_t n, int flags) {   // for non
                 continue;
             }
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                return NO_DATA;
+                return -2;
             }
             perror("recv for nonblock");
             return nread;

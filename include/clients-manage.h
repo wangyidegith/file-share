@@ -69,7 +69,6 @@ void* worker(void* arg) {
             delete client;
             pthread_exit((void*)-1);
         }
-        pthread_exit((void*)-1);
     } else {
         fprintf(stderr, "Err: worker tell - unknown type, may be attack.\n");
         delete client;
@@ -118,6 +117,7 @@ void* serverResponseFileList(void* arg) {
             continue;
         }
         // (2) pre file list
+        filenames.clear();
         listFiles("./", filenames);
         // (3) send
         client->getPack()->getPackbuf()->filesize = filenames.length();

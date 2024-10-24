@@ -90,6 +90,12 @@ int main(int argc, char* argv[]) {
                     fprintf(stderr, "Err: down - send %s failed.\n", files[i]);
                 }
             }
+            for (i = 0; i < files_num; i++) {
+                if (fpm->recvFile(sockfd)) {
+                    fprintf(stderr, "Err: recv downfile failed.\n");
+                    return -1;
+                }
+            }
             break;
         default :
             fprintf(stderr, "Err: unknown type.");
