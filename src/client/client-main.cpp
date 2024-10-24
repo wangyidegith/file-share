@@ -61,6 +61,7 @@ int main(int argc, char* argv[]) {
     int sockfd = createConnectSocket(server_ip, server_port);
     if (sockfd == -1) {
         fprintf(stderr, "Err: create connect socket falied.\n");
+        exit(EXIT_FAILURE);
     }
     FilePackManage* fpm = NULL;
     try {
@@ -72,32 +73,30 @@ int main(int argc, char* argv[]) {
     // 2 process accoring to arg
     switch (type) {
         case ls :
-            printf("请稍等，bug正在修复中。\n");
-            // sendLs();
+            if (fpm->clientGetServerFileList(sockfd)) {
+                fprintf(stderr, "Err: ls - send failed.\n");
+            }
             break;
         case up :
             for (i = 0; i < files_num; i++) {
                 if (fpm->sendFile(sockfd, files[i])) {
                     fprintf(stderr, "Err: up - send %s failed.\n", files[i]);
-                    delete fpm;
-                    continue;
                 }
             }
             break;
         case down :
             for (i = 0; i < files_num; i++) {
-                if (fpm->sendDown(sockfd, files[i])) {
+                if (fpm->downFile(sockfd, files[i])) {
                     fprintf(stderr, "Err: down - send %s failed.\n", files[i]);
-                    delete fpm;
-                    continue;
                 }
             }
             break;
         default :
-            fprintf(stderr, "Err: unknown type type.");
+            fprintf(stderr, "Err: unknown type.");
             break;
     }
     // 3 free
+    delete fpm;
     for (i = 0; i < files_num; i++) {
         free(files[i]);
     }

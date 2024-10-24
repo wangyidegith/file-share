@@ -30,7 +30,9 @@ class FilePackManage {
         FilePack* getPackbuf() { return this->pack; }
         int getPACKET_HEAD_SIZE() { return PACKET_HEAD_SIZE; }
         int getFILE_BLOCK_SIZE() { return FILE_BLOCK_SIZE; }
-        int sendDown(const int sockfd, const char* filename);
+        int downFile(const int sockfd, const char* filename);
+        int recvFileList(const int sockfd);
+        int clientGetServerFileList(const int sockfd);
         int serverProcessDown(const int sockfd);
         int sendFile(int sockfd, const char* filepath);
         int recvFile(int sockfd);

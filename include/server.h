@@ -6,8 +6,12 @@
 #include <sys/epoll.h>
 #include <pthread.h>
 #include <sys/socket.h>
+#include <string.h>
+#include <string>
+#include <dirent.h>
 
 #include "m-net.h"
+#include "task-queue.h"
 
 #define CLIENTS_H 1024
 
@@ -20,17 +24,22 @@ class Server {
     protected :
         struct epoll_event ev;
     public :
-        Server(char* serverip, unsigned short serverport, int clientnum);
+        Server(const char* serverip, unsigned short serverport, int clientnum);
         void setSockfd(int sockfd) { this->sockfd = sockfd; }
         int getSockfd() { return this->sockfd; }
         void setEpfd(int epfd) { this->epfd = epfd; }
         int getEpfd() { return this->epfd; }
         struct epoll_event* getEvs() { return this->evs; }
         int getClientnum() { return this->CLIENTNUM; }
-        virtual ~Server();
+        ~Server();
 };
 
-Server::Server(char* serverip, unsigned short serverport, int clientnum) : CLIENTNUM(clientnum) {
+Server::Server(const char* serverip, unsigned short serverport, int clientnum) : CLIENTNUM(clientnum) {
+    if (serverip != NULL) {
+        if (!strcmp(serverip, "from child")) {
+            return;
+        }
+    }
     // 1 create listen socket
     this->sockfd = createListenSocket(serverip, serverport);
     if (this->sockfd == -1) {
@@ -53,11 +62,13 @@ Server::Server(char* serverip, unsigned short serverport, int clientnum) : CLIEN
 }
 
 Server::~Server() {
+    /*
     if (this->sockfd != 0 && this->epfd != 0) {
-        epoll_ctl(this->epfd, EPOLL_CTL_DEL, this->sockfd, NULL);
+        if (epoll_ctl(this->epfd, EPOLL_CTL_DEL, this->sockfd, NULL)  == -1) { perror("epoll_ctl(del) in delete server"); }
         close(this->epfd);
         close(this->sockfd);
     }
+    */
 }
 
 #endif
