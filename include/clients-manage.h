@@ -49,7 +49,7 @@ Client::Client(Server*& server, const char* a, unsigned short b, int c) : Server
 
 Client::~Client() {
     if (this->getSockfd() != 0 && this->getEpfd() != 0) {
-        // KEEP-CONN: if (epoll_ctl(this->getEpfd(), EPOLL_CTL_DEL, this->getSockfd(), NULL) == -1) { perror("epoll_ctl(del) in delete client"); }
+        // if (epoll_ctl(this->getEpfd(), EPOLL_CTL_DEL, this->getSockfd(), NULL) == -1) { perror("epoll_ctl(del) in delete client"); }   // KEEP-CONN
         close(this->getSockfd());
     }
     delete this->fpm;
@@ -74,7 +74,7 @@ void* worker(void* arg) {
         delete client;
         pthread_exit((void*)-1);
     }
-    delete client;   // KEEP-CONN: 将来要改在线，就不能delete，这是长短连接的最大区别。
+    delete client;   // KEEP-CONN: 将来要改在线，就不能delete，这是长短连接的最大区别。我现在发现多文件也不能删掉client，要不就得修改recvFile函数。
     pthread_exit((void*)0);
 }
 
